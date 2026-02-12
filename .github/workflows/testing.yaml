@@ -14,26 +14,17 @@ jobs:
     timeout-minutes: 3
     strategy:
       matrix:
-        python: ['3.9', '3.12', '3.14']
+        python: [3.7, 3.8, 3.9]
     container:
       image: python:${{ matrix.python }}-alpine
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v1
 
       - name: Install OS dependencies
         run: apk --update add gcc libffi-dev linux-headers make musl-dev
 
-      - name: Install uv
-        if: matrix.python != '3.9'
-        uses: astral-sh/setup-uv@v7
-
-      - name: Install testing dependencies (uv)
-        if: matrix.python != '3.9'
-        run: uv pip install --system -e '.[testing]'
-
-      - name: Install testing dependencies (pip)
-        if: matrix.python == '3.9'
+      - name: Install testing dependencies
         run: pip3 --no-cache-dir install -e '.[testing]'
 
       - name: Create build directory
