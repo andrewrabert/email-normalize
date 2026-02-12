@@ -6,13 +6,15 @@ Library for returning a normalized email-address stripping mailbox provider
 specific behaviors such as "Plus addressing" (foo+bar@gmail.com).
 
 """
+
+from __future__ import annotations
+
 import asyncio
 import copy
 import dataclasses
 import logging
 import operator
 import time
-import typing
 from email import utils
 
 import aiodns
@@ -22,16 +24,17 @@ from email_normalize import providers
 
 LOGGER = logging.getLogger(__name__)
 
-MXRecords = typing.List[typing.Tuple[int, str]]
+MXRecords = list[tuple[int, str]]
 
-cache: typing.Dict[str, 'CachedItem'] = {}
+cache: dict[str, CachedItem] = {}
 
 
 class CachedItem:
     """Used to represent a cached lookup for implementing a LFRU cache"""
+
     __slots__ = ['cached_at', 'hits', 'last_access', 'mx_records', 'ttl']
 
-    def __init__(self, mx_records: MXRecords, ttl: int):
+    def __init__(self, mx_records: MXRecords, ttl: int) -> None:
         self.cached_at = time.monotonic()
         self.hits = 0
         self.last_access: float = 0.0
@@ -39,7 +42,7 @@ class CachedItem:
         self.ttl = ttl
 
     @property
-    def expired(self):
+    def expired(self) -> bool:
         return (time.monotonic() - self.cached_at) > self.ttl
 
 
@@ -72,21 +75,39 @@ class Result:
         @dataclasses.dataclass(frozen=True)
         class Result:
             address = 'Gavin.M.Roy+ignore-spam@gmail.com'
-            normalized_address = 'gavinmroy@gmail.com'
-            mx_records =     [
-                (5, 'gmail-smtp-in.l.google.com'),
-                (10, 'alt1.gmail-smtp-in.l.google.com'),
-                (20, 'alt2.gmail-smtp-in.l.google.com'),
-                (30, 'alt3.gmail-smtp-in.l.google.com'),
-                (40, 'alt4.gmail-smtp-in.l.google.com')
+            normalized_address = (
+                'gavinmroy@gmail.com'
+            )
+            mx_records = [
+                (
+                    5,
+                    'gmail-smtp-in.l.google.com',
+                ),
+                (
+                    10,
+                    'alt1.gmail-smtp-in.l.google.com',
+                ),
+                (
+                    20,
+                    'alt2.gmail-smtp-in.l.google.com',
+                ),
+                (
+                    30,
+                    'alt3.gmail-smtp-in.l.google.com',
+                ),
+                (
+                    40,
+                    'alt4.gmail-smtp-in.l.google.com',
+                ),
             ]
             mailbox_provider = 'Gmail'
 
     """
+
     address: str
     normalized_address: str
     mx_records: MXRecords
-    mailbox_provider: typing.Optional[str] = None
+    mailbox_provider: str | None = None
 
 
 class Normalizer:
@@ -107,9 +128,15 @@ class Normalizer:
 
     .. code-block:: python
 
-        async def normalize(email_address: str) -> email_normalize.Result:
-            normalizer = email_normalize.Normalizer()
-            return await normalizer.normalize('foo@bar.io')
+        async def normalize(
+            email_address: str,
+        ) -> email_normalize.Result:
+            normalizer = (
+                email_normalize.Normalizer()
+            )
+            return await normalizer.normalize(
+                'foo@bar.io'
+            )
 
     :param name_servers: Optional list of hostnames to use for DNS resolution
     :type name_servers: list(str) or None
@@ -125,11 +152,13 @@ class Normalizer:
 
     """
 
-    def __init__(self,
-                 name_servers: typing.Optional[typing.List[str]] = None,
-                 cache_limit: int = 1024,
-                 cache_failures: bool = True,
-                 failure_ttl: int = 300) -> 'Normalizer':
+    def __init__(
+        self,
+        name_servers: list[str] | None = None,
+        cache_limit: int = 1024,
+        cache_failures: bool = True,
+        failure_ttl: int = 300,
+    ) -> None:
         self._resolver = aiodns.DNSResolver(name_servers)
         self.cache_failures = cache_failures
         self.cache_limit = cache_limit
@@ -154,19 +183,23 @@ class Normalizer:
                 mx_records, ttl = [], self.failure_ttl
             else:
                 mx_records = [(r.priority, r.host) for r in records]
-                ttl = min(r.ttl for r in records) \
-                    if records else self.failure_ttl
+                ttl = (
+                    min(r.ttl for r in records)
+                    if records
+                    else self.failure_ttl
+                )
 
             # Prune the cache if over the limit, finding least used, oldest
             if len(cache.keys()) >= self.cache_limit:
                 key_to_prune = sorted(
-                    cache.items(), key=lambda i: (
-                        i[1].hits, i[1].last_access))[0][0]
+                    cache.items(), key=lambda i: (i[1].hits, i[1].last_access)
+                )[0][0]
                 LOGGER.debug('Pruning cache of %s', key_to_prune)
                 del cache[key_to_prune]
 
             cache[domain_part] = CachedItem(
-                sorted(mx_records, key=operator.itemgetter(0, 1)), ttl)
+                sorted(mx_records, key=operator.itemgetter(0, 1)), ttl
+            )
 
         cache[domain_part].hits += 1
         cache[domain_part].last_access = time.monotonic()
@@ -192,19 +225,25 @@ class Normalizer:
         if provider:
             if provider.Flags & providers.Rules.LOCAL_PART_AS_HOSTNAME:
                 local_part, domain_part = self._local_part_as_hostname(
-                    local_part, domain_part)
+                    local_part, domain_part
+                )
             if provider.Flags & providers.Rules.STRIP_PERIODS:
                 local_part = local_part.replace('.', '')
             if provider.Flags & providers.Rules.PLUS_ADDRESSING:
                 local_part = local_part.split('+')[0]
             if provider.Flags & providers.Rules.DASH_ADDRESSING:
                 local_part = local_part.split('-')[0]
-        return Result(email_address, '@'.join([local_part, domain_part]),
-                      mx_records, provider.__name__ if provider else None)
+        return Result(
+            email_address,
+            '@'.join([local_part, domain_part]),
+            mx_records,
+            provider.__name__ if provider else None,
+        )
 
     @staticmethod
-    def _local_part_as_hostname(local_part: str,
-                                domain_part: str) -> typing.Tuple[str, str]:
+    def _local_part_as_hostname(
+        local_part: str, domain_part: str
+    ) -> tuple[str, str]:
         domain_segments = domain_part.split('.')
         if len(domain_segments) > 2:
             local_part = domain_segments[0]
@@ -212,10 +251,11 @@ class Normalizer:
         return local_part, domain_part
 
     @staticmethod
-    def _lookup_provider(mx_records: typing.List[typing.Tuple[int, str]]) \
-            -> typing.Optional[providers.MailboxProvider]:
-        for priority, host in mx_records:
-            lchost = host.lower();
+    def _lookup_provider(
+        mx_records: list[tuple[int, str]],
+    ) -> providers.MailboxProvider | None:
+        for _priority, host in mx_records:
+            lchost = host.lower()
             for provider in providers.Providers:
                 for domain in provider.MXDomains:
                     if lchost.endswith(domain):
@@ -248,11 +288,16 @@ def normalize(email_address: str) -> Result:
 
         import email_normalize
 
-        result = email_normalize.normalize('foo@bar.io')
+        result = email_normalize.normalize(
+            'foo@bar.io'
+        )
 
     :param email_address: The address to normalize
 
     """
-    loop = asyncio.get_event_loop()
-    normalizer = Normalizer()
-    return loop.run_until_complete(normalizer.normalize(email_address))
+
+    async def _normalize() -> Result:
+        normalizer = Normalizer()
+        return await normalizer.normalize(email_address)
+
+    return asyncio.run(_normalize())

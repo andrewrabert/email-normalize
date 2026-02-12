@@ -1,6 +1,6 @@
 import datetime
 
-import pkg_resources
+from importlib import metadata
 import sphinx_material
 
 html_theme = 'sphinx_material'
@@ -30,7 +30,7 @@ html_css_files = [
 
 master_doc = 'index'
 project = 'email-normalize'
-release = version = pkg_resources.get_distribution(project).version
+release = version = metadata.version(project)
 copyright = '2015-{}, Gavin M. Roy'.format(datetime.date.today().year)
 
 extensions = [

@@ -2,48 +2,34 @@ name: Testing
 on:
   push:
     branches: ["*"]
-    paths-ignore:
-      - 'docs/**'
-      - 'setup.*'
-      - '*.md'
-      - '*.rst'
-    tags-ignore: ["*"]
+  pull_request:
+    branches: [master]
+
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
     strategy:
       matrix:
-        python: [3.7, 3.8, 3.9]
-    container:
-      image: python:${{ matrix.python }}-alpine
+        python-version: ['3.9', '3.12', '3.14']
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v1
-
-      - name: Install OS dependencies
-        run: apk --update add gcc libffi-dev linux-headers make musl-dev
-
-      - name: Install testing dependencies
-        run: pip3 --no-cache-dir install -e '.[testing]'
-
-      - name: Create build directory
-        run: mkdir build
-
-      - name: Run flake8 tests
-        run: flake8
-
-      - name: Run tests
-        run: coverage run
-
-      - name: Output coverage
-        run: coverage report && coverage xml
-
-      - name: Upload Coverage
-        uses: codecov/codecov-action@v1.0.2
-        if: github.event_name == 'push' && github.repository == 'gmr/email-normalize'
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v7
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: uv sync --group dev
+      - name: Lint
+        run: |
+          uv run ruff check email_normalize/ tests/
+          uv run ruff format --check email_normalize/ tests/
+      - name: Test
+        run: >-
+          uv run pytest tests/
+          --cov --cov-report=term-missing
+          --cov-report=xml:coverage.xml
+      - name: Upload coverage
+        if: matrix.python-version == '3.14'
+        uses: actions/upload-artifact@v4
         with:
-          token: ${{secrets.CODECOV_TOKEN}}
-          file: build/coverage.xml
-          flags: unittests
-          fail_ci_if_error: true
+          name: coverage-report
+          path: coverage.xml

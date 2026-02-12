@@ -1,0 +1,117 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "email-normalize"
+version = "2.0.0"
+description = "Return a normalized email-address stripping ISP specific behaviors"
+authors = [
+  {name = "Gavin M. Roy", email = "gavinmroy@gmail.com"},
+]
+license = {text = "BSD-3-Clause"}
+readme = "README.rst"
+requires-python = ">=3.9"
+keywords = [
+  "email",
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "Framework :: AsyncIO",
+  "License :: OSI Approved :: BSD License",
+  "Natural Language :: English",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Communications",
+  "Topic :: Communications :: Email",
+  "Topic :: Internet",
+  "Topic :: Software Development",
+  "Typing :: Typed",
+]
+dependencies = [
+  "aiodns",
+]
+
+[project.urls]
+Homepage = "https://github.com/gmr/email-normalize"
+Repository = "https://github.com/gmr/email-normalize"
+Documentation = "https://email-normalize.readthedocs.io"
+"Bug Tracker" = "https://github.com/gmr/email-normalize/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["email_normalize"]
+
+[tool.ruff]
+line-length = 79
+target-version = "py39"
+
+[tool.ruff.format]
+docstring-code-format = true
+docstring-code-line-length = 40
+quote-style = "single"
+skip-magic-trailing-comma = true
+
+[tool.ruff.lint]
+select = [
+  "ANN",    # flake8-annotations
+  "ASYNC",  # flake8-async
+  "B",      # flake8-bugbear
+  "BLE",    # flake8-blind-except
+  "C4",     # flake8-comprehensions
+  "DTZ",    # flake8-datetimez
+  "E", "W", # pycodestyle
+  "F",      # pyflakes
+  "G",      # flake8-logging-format
+  "I",      # isort
+  "S",      # flake8-bandit
+  "SIM",    # flake8-simplify
+  "T20",    # flake8-print
+  "UP",     # pyupgrade
+  "F401",   # unused imports
+  "F841",   # unused variables
+  "B027",   # empty method in abstract base class
+  "B905",   # zip() without explicit strict parameter
+]
+ignore = [
+  "ANN401", # There is a time and place for typing.Any
+  "RSE",    # contradicts Python Style Guide
+]
+flake8-quotes = {inline-quotes = "single"}
+isort.split-on-trailing-comma = false
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["ANN", "S101"]
+
+[dependency-groups]
+dev = [
+  "build",
+  "coverage[toml]",
+  "pre-commit",
+  "pytest",
+  "pytest-asyncio",
+  "pytest-cov",
+  "ruff",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["email_normalize"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+exclude_lines = [
+  "pragma: no cover",
+  "if typing.TYPE_CHECKING:",
+]
+
+[[tool.uv.index]]
+url = "https://pypi.org/simple"
+default = true

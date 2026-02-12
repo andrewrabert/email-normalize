@@ -8,7 +8,7 @@ MXRecords Type
 
     .. code-block:: python
 
-        typing.List[typing.Tuple[int, str]]
+        list[tuple[int, str]]
 
 **Example**
 

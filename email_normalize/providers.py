@@ -1,8 +1,10 @@
 """
 Provider Specific Rules
 """
+
+from __future__ import annotations
+
 import enum
-import typing
 
 
 class Rules(enum.Flag):
@@ -12,6 +14,7 @@ class Rules(enum.Flag):
     Used to determine how to normalize provider specific email addresses.
 
     """
+
     DASH_ADDRESSING = enum.auto()
     PLUS_ADDRESSING = enum.auto()
     LOCAL_PART_AS_HOSTNAME = enum.auto()
@@ -20,53 +23,54 @@ class Rules(enum.Flag):
 
 class MailboxProvider:
     """Base class to define the contract for the mail providers"""
+
     Flags: Rules
-    MXDomains: typing.Set[str]
+    MXDomains: set[str]
 
 
 class Apple(MailboxProvider):
     Flags: Rules = Rules.PLUS_ADDRESSING
-    MXDomains: typing.Set[str] = {'icloud.com'}
+    MXDomains: set[str] = {'icloud.com'}
 
 
 class Fastmail(MailboxProvider):
     Flags: Rules = Rules.PLUS_ADDRESSING ^ Rules.LOCAL_PART_AS_HOSTNAME
-    MXDomains: typing.Set[str] = {'messagingengine.com'}
+    MXDomains: set[str] = {'messagingengine.com'}
 
 
 class Google(MailboxProvider):
     Flags: Rules = Rules.PLUS_ADDRESSING ^ Rules.STRIP_PERIODS
-    MXDomains: typing.Set[str] = {'google.com', 'googlemail.com'}
+    MXDomains: set[str] = {'google.com', 'googlemail.com'}
 
 
 class Microsoft(MailboxProvider):
     Flags: Rules = Rules.PLUS_ADDRESSING
-    MXDomains: typing.Set[str] = {'outlook.com'}
+    MXDomains: set[str] = {'outlook.com'}
 
 
 class ProtonMail(MailboxProvider):
     Flags: Rules = Rules.PLUS_ADDRESSING
-    MXDomains: typing.Set[str] = {'protonmail.ch'}
+    MXDomains: set[str] = {'protonmail.ch'}
 
 
 class Rackspace(MailboxProvider):
     Flags: Rules = Rules.PLUS_ADDRESSING
-    MXDomains: typing.Set[str] = {'emailsrvr.com'}
+    MXDomains: set[str] = {'emailsrvr.com'}
 
 
 class Yahoo(MailboxProvider):
     Flags: Rules = Rules.DASH_ADDRESSING
-    MXDomains: typing.Set[str] = {'yahoodns.net'}
+    MXDomains: set[str] = {'yahoodns.net'}
 
 
 class Yandex(MailboxProvider):
     Flags: Rules = Rules.PLUS_ADDRESSING
-    MXDomains: typing.Set[str] = {'mx.yandex.net', 'yandex.ru'}
+    MXDomains: set[str] = {'mx.yandex.net', 'yandex.ru'}
 
 
 class Zoho(MailboxProvider):
     Flags: Rules = Rules.PLUS_ADDRESSING
-    MXDomains: typing.Set[str] = {'zoho.com'}
+    MXDomains: set[str] = {'zoho.com'}
 
 
 Providers = [
@@ -78,5 +82,5 @@ Providers = [
     Rackspace,
     Yahoo,
     Yandex,
-    Zoho
+    Zoho,
 ]
