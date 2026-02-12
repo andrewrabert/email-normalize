@@ -1,0 +1,43 @@
+name: Testing (uv)
+on:
+  push:
+    branches: ["*"]
+    paths-ignore:
+      - 'docs/**'
+      - 'setup.*'
+      - '*.md'
+      - '*.rst'
+    tags-ignore: ["*"]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    strategy:
+      matrix:
+        python: ['3.9', '3.12', '3.14']
+    container:
+      image: python:${{ matrix.python }}-alpine
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install OS dependencies
+        run: apk --update add gcc libffi-dev linux-headers make musl-dev
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install testing dependencies
+        run: uv pip install --system -e '.[testing]'
+
+      - name: Create build directory
+        run: mkdir build
+
+      - name: Run flake8 tests
+        run: flake8
+
+      - name: Run tests
+        run: coverage run
+
+      - name: Output coverage
+        run: coverage report && coverage xml
